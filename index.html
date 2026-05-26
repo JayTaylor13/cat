@@ -1,1 +1,413 @@
 
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>喵喵占卜 · 今日运势</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@400;700&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #08061a;
+            --c1: #e879f9;
+            --c2: #c084fc;
+            --c4: #f472b6;
+            --gold: #fde68a;
+            --text: #faf5ff;
+            --muted: #a78bfa;
+            --blush: #fbcfe8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.2) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 100%, rgba(236, 72, 153, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(129, 140, 248, 0.1) 0%, transparent 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'ZCOOL XiaoWei', 'Noto Serif SC', serif;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .star { position: absolute; border-radius: 50%; animation: tw var(--d) ease-in-out infinite var(--dl); }
+        @keyframes tw { 0%,100% { opacity:.15; transform: scale(1); } 50% { opacity:1; transform: scale(1.5); } }
+
+        .header { text-align: center; z-index: 2; margin-bottom: 10px; animation: fadeD 1s ease both; }
+        .header h1 {
+            font-size: clamp(1.8rem, 7vw, 2.6rem);
+            color: var(--text); letter-spacing: .12em;
+            text-shadow: 0 0 40px rgba(255,105,180,.5), 0 0 80px rgba(255,182,204,.3);
+        }
+        .header p { font-family: 'Quicksand', sans-serif; font-size: .7rem; color: var(--muted); letter-spacing: .35em; margin-top: 6px; text-transform: uppercase; }
+        @keyframes fadeD { from { opacity:0; transform: translateY(-16px); } to { opacity:1; transform: translateY(0); } }
+
+        .scene { position: relative; z-index: 2; width: clamp(240px, 72vw, 360px); display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; }
+
+        .cat-wrap {
+            width: 100%; display: flex; justify-content: center;
+            animation: catBounce 3s ease-in-out infinite;
+            filter: drop-shadow(0 12px 30px rgba(255,105,180,.35));
+        }
+        @keyframes catBounce {
+            0%,100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-8px) rotate(-2deg); }
+            75% { transform: translateY(-4px) rotate(2deg); }
+        }
+
+        .ball-wrap { position: relative; margin-top: -30px; z-index: 3; display: flex; justify-content: center; }
+        .ball {
+            width: clamp(130px, 40vw, 180px); height: clamp(130px, 40vw, 180px);
+            border-radius: 50%; cursor: pointer; position: absolute; left: 50%; top: 0;
+            transform: translateX(-50%);
+            transition: filter .3s; display: flex; align-items: center; justify-content: center;
+        }
+        .ball:hover { filter: brightness(1.2); }
+        .ball.shaking { animation: ballShk .7s ease-in-out; }
+        @keyframes ballShk {
+            0%,100% { transform: translateX(-50%) rotate(0) scale(1); }
+            12% { transform: translateX(-50%) rotate(-12deg) scale(1.1); }
+            25% { transform: translateX(-50%) rotate(9deg) scale(1.06); }
+            37% { transform: translateX(-50%) rotate(-8deg) scale(1.08); }
+            50% { transform: translateX(-50%) rotate(6deg) scale(1.04); }
+            62% { transform: translateX(-50%) rotate(-4deg) scale(1.03); }
+            75% { transform: translateX(-50%) rotate(2deg) scale(1.01); }
+        }
+        .ball.glowing { animation: ballGl 2s ease-in-out infinite; }
+        @keyframes ballGl { 0%,100% { filter: brightness(1) drop-shadow(0 0 20px rgba(255,105,180,.5)); } 50% { filter: brightness(1.3) drop-shadow(0 0 50px rgba(255,105,180,.9)); } }
+
+        .ball-hint {
+            position: absolute; bottom: -36px; left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Quicksand', sans-serif;
+            font-size: clamp(.72rem, 2.8vw, .85rem); color: var(--c4); letter-spacing: .08em;
+            font-weight: 600; white-space: nowrap;
+            animation: hintPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes hintPulse { 0%,100% { opacity:.6; transform: translateX(-50%) translateY(0); } 50% { opacity:1; transform: translateX(-50%) translateY(-5px); } }
+
+        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .p { position: absolute; border-radius: 50%; animation: pRise var(--d) ease-out forwards; }
+        @keyframes pRise { 0% { opacity:0; transform: translateY(0) scale(0); } 15% { opacity:.9; } 90% { opacity:.1; } 100% { opacity:0; transform: translateY(-30vh) scale(1); } }
+
+        .loading { display: none; align-items: center; gap: 8px; padding: 16px; z-index: 4; }
+        .loading.show { display: flex; }
+        .ld { width: 9px; height: 9px; border-radius: 50%; background: var(--c1); animation: ldB 1.2s ease-in-out infinite; }
+        .ld:nth-child(2){animation-delay:.15s;}
+        .ld:nth-child(3){animation-delay:.3s;}
+        @keyframes ldB { 0%,80%,100%{transform:scale(.5);opacity:.3;} 40%{transform:scale(1.2);opacity:1;} }
+
+        .card {
+            display: none; flex-direction: column; align-items: center;
+            background: linear-gradient(145deg, rgba(22,14,60,.97), rgba(14,9,40,.99));
+            border: 1.5px solid rgba(232,121,249,.25); border-radius: 28px;
+            padding: clamp(22px, 5vw, 34px) clamp(18px, 5vw, 30px);
+            max-width: min(420px, 92vw); width: 100%;
+            position: relative; overflow: hidden; z-index: 2;
+            box-shadow: 0 24px 70px rgba(0,0,0,.6), 0 0 50px rgba(232,121,249,.12), inset 0 1px 0 rgba(255,255,255,.07);
+            animation: cardIn .7s cubic-bezier(.34,1.56,.64,1) both; margin-top: 4px;
+        }
+        .card.show { display: flex; }
+        @keyframes cardIn { from{opacity:0;transform:scale(.75) translateY(40px);} to{opacity:1;transform:scale(1) translateY(0);} }
+        .card::before { content:''; position: absolute; top:0; left:0; right:0; height:1px; background: linear-gradient(90deg,transparent,rgba(232,121,249,.5),transparent); }
+        .c-orb { position: absolute; top:-40px; right:-40px; width:130px; height:130px; border-radius: 50%; background: radial-gradient(circle,rgba(232,121,249,.12) 0%,transparent 70%); pointer-events: none; }
+        .rank-badge { font-family: 'Quicksand', sans-serif; font-size: .65rem; font-weight: 700; letter-spacing: .3em; padding: 4px 18px; border-radius: 20px; border: 1px solid; margin-bottom: 14px; }
+        .badge-super { background:rgba(253,230,138,.12); color:#fde68a; border-color:rgba(253,230,138,.4); }
+        .badge-good { background:rgba(232,121,249,.12); color:#e879f9; border-color:rgba(232,121,249,.4); }
+        .badge-normal { background:rgba(244,114,182,.12); color:#f472b6; border-color:rgba(244,114,182,.4); }
+        .badge-bad { background:rgba(248,113,113,.12); color:#f87171; border-color:rgba(248,113,113,.4); }
+        .date-str { font-family: 'Quicksand', sans-serif; font-size: .7rem; color: var(--muted); letter-spacing: .1em; margin-bottom: 12px; }
+        .overall { font-size: clamp(1.2rem, 4.5vw, 1.6rem); color: var(--text); text-align: center; line-height: 1.5; letter-spacing: .05em; margin-bottom: 16px; }
+        .divider { width: 50px; height: 2px; background: linear-gradient(90deg,var(--c1),var(--c4)); border-radius: 2px; margin: 0 auto 16px; }
+        .items { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .item { background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.055); border-radius: 14px; padding: 11px 13px; display: flex; flex-direction: column; gap: 3px; }
+        .il { font-family: 'Quicksand', sans-serif; font-size: .62rem; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); }
+        .iv { font-size: clamp(.88rem, 3vw, 1rem); color: var(--text); font-weight: 700; }
+        .quote { width: 100%; background: rgba(232,121,249,.055); border-left: 3px solid var(--c1); border-radius: 0 10px 10px 0; padding: 11px 15px; margin-bottom: 18px; font-size: clamp(.82rem, 2.8vw, .93rem); color: var(--blush); line-height: 1.75; font-style: italic; }
+        .replay { display: flex; align-items: center; gap: 8px; padding: 11px 26px; background: linear-gradient(135deg, rgba(232,121,249,.18), rgba(244,114,182,.18)); border: 1.5px solid rgba(232,121,249,.35); border-radius: 30px; color: var(--text); font-family: 'Quicksand', sans-serif; font-size: .82rem; font-weight: 600; letter-spacing: .1em; cursor: pointer; transition: all .3s; }
+        .replay:hover { background: linear-gradient(135deg, rgba(232,121,249,.32), rgba(244,114,182,.32)); border-color: rgba(232,121,249,.65); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,121,249,.22); }
+        .share-tip { margin-top: 10px; font-family: 'Quicksand', sans-serif; font-size: .62rem; color: var(--muted); opacity: .55; }
+        .scene.dimmed { opacity: .3; filter: blur(4px); transition: all .5s; }
+        .header.hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="particles" id="particles"></div>
+
+<div class="header" id="header">
+    <h1>喵喵占卜</h1>
+    <p>Fortune Telling by Cat</p>
+</div>
+
+<div class="scene" id="scene">
+
+    <!-- Chibi Cat — Lo Xiao Hei style (round, chubby, big eyes) -->
+    <div class="cat-wrap">
+        <svg width="clamp(160px, 46vw, 220px)" height="clamp(160px, 46vw, 220px)" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+            <!-- Tail (fluffy, curved) -->
+            <path d="M165 170 Q200 150 195 120 Q192 100 175 105 Q158 112 160 130 Q162 145 165 155" stroke="#ffb3cc" stroke-width="16" fill="none" stroke-linecap="round">
+                <animate attributeName="d" dur="3s" repeatCount="indefinite"
+                    values="M165 170 Q200 150 195 120 Q192 100 175 105 Q158 112 160 130 Q162 145 165 155;
+                            M165 170 Q205 145 198 112 Q195 95 176 100 Q160 108 162 128 Q164 148 165 155;
+                            M165 170 Q200 150 195 120 Q192 100 175 105 Q158 112 160 130 Q162 145 165 155"/>
+            </path>
+
+            <!-- Body (chubby oval) -->
+            <ellipse cx="110" cy="175" rx="58" ry="42" fill="#ffb3cc"/>
+            <!-- Belly (lighter pink) -->
+            <ellipse cx="110" cy="180" rx="38" ry="28" fill="#ffd6e0"/>
+            <!-- Chest fluff -->
+            <ellipse cx="110" cy="165" rx="25" ry="18" fill="#ffc8d6"/>
+
+            <!-- Head (big round) -->
+            <circle cx="110" cy="100" r="68" fill="#ffb3cc"/>
+            <!-- Face lighter area -->
+            <circle cx="110" cy="108" r="50" fill="#ffe8f0"/>
+
+            <!-- Ears (small rounded) -->
+            <ellipse cx="58" cy="50" rx="20" ry="18" fill="#ffb3cc"/>
+            <ellipse cx="162" cy="50" rx="20" ry="18" fill="#ffb3cc"/>
+            <!-- Inner ears (darker pink) -->
+            <ellipse cx="58" cy="52" rx="11" ry="10" fill="#ff8099"/>
+            <ellipse cx="162" cy="52" rx="11" ry="10" fill="#ff8099"/>
+
+            <!-- Big round eyes (white sclera) -->
+            <circle cx="82" cy="100" r="22" fill="white"/>
+            <circle cx="138" cy="100" r="22" fill="white"/>
+            <!-- Iris (pink/magenta for pink cat) -->
+            <circle cx="84" cy="102" r="15" fill="#e879c0"/>
+            <circle cx="140" cy="102" r="15" fill="#e879c0"/>
+            <!-- Pupil -->
+            <circle cx="85" cy="103" r="9" fill="#3d1a30"/>
+            <circle cx="141" cy="103" r="9" fill="#3d1a30"/>
+            <!-- Eye highlights (big cute) -->
+            <circle cx="90" cy="97" r="6" fill="white"/>
+            <circle cx="146" cy="97" r="6" fill="white"/>
+            <circle cx="79" cy="107" r="3.5" fill="white"/>
+            <circle cx="135" cy="107" r="3.5" fill="white"/>
+            <!-- Tiny sparkle star -->
+            <path d="M96 93 L97.5 90 L99 93 L102 94 L99 95.5 L97.5 98 L96 95.5 L93 94 Z" fill="white" opacity=".9"/>
+            <path d="M152 93 L153.5 90 L155 93 L158 94 L155 95.5 L153.5 98 L152 95.5 L149 94 Z" fill="white" opacity=".9"/>
+
+            <!-- Nose (small triangle) -->
+            <ellipse cx="110" cy="120" rx="5" ry="3.5" fill="#ff6b8a"/>
+            <!-- Mouth (w shape) -->
+            <path d="M103 125 Q110 131 117 125" stroke="#c06070" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+            <path d="M110 127 L110 132" stroke="#c06070" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+            <!-- Blush (deeper pink cheeks) -->
+            <ellipse cx="65" cy="118" rx="16" ry="10" fill="#ff6b8a" opacity=".4"/>
+            <ellipse cx="155" cy="118" rx="16" ry="10" fill="#ff6b8a" opacity=".4"/>
+
+            <!-- Whiskers (thin, delicate, light pink) -->
+            <line x1="50" y1="115" x2="18" y2="112" stroke="#e88099" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>
+            <line x1="50" y1="120" x2="16" y2="122" stroke="#e88099" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>
+            <line x1="50" y1="125" x2="18" y2="132" stroke="#e88099" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
+            <line x1="170" y1="115" x2="202" y2="112" stroke="#e88099" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>
+            <line x1="170" y1="120" x2="204" y2="122" stroke="#e88099" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>
+            <line x1="170" y1="125" x2="202" y2="132" stroke="#e88099" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>
+
+            <!-- Front paws (round, stubby, pink) -->
+            <ellipse cx="80" cy="202" rx="24" ry="16" fill="#ffb3cc"/>
+            <ellipse cx="140" cy="202" rx="24" ry="16" fill="#ffb3cc"/>
+            <!-- Paw toe beans (deeper pink) -->
+            <circle cx="70" cy="206" r="6" fill="#ff6b8a"/>
+            <circle cx="80" cy="210" r="6" fill="#ff6b8a"/>
+            <circle cx="90" cy="206" r="6" fill="#ff6b8a"/>
+            <circle cx="130" cy="206" r="6" fill="#ff6b8a"/>
+            <circle cx="140" cy="210" r="6" fill="#ff6b8a"/>
+            <circle cx="150" cy="206" r="6" fill="#ff6b8a"/>
+
+            <!-- Tiny bow / decoration on head -->
+            <circle cx="155" cy="68" r="5" fill="#ff4d8d"/>
+            <path d="M155 68 L145 62 L145 74 Z" fill="#ff4d8d"/>
+            <path d="M155 68 L165 62 L165 74 Z" fill="#ff4d8d"/>
+            <circle cx="155" cy="68" r="3" fill="#ffb3d1"/>
+        </svg>
+    </div>
+
+    <!-- Crystal Ball -->
+    <div class="ball-wrap" style="margin-top: -10px;">
+        <div class="ball" id="ball" onclick="draw()">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="bg1" cx="32%" cy="28%" r="65%">
+                        <stop offset="0%" stop-color="rgba(230,180,255,0.55)"/>
+                        <stop offset="30%" stop-color="rgba(160,80,240,0.38)"/>
+                        <stop offset="65%" stop-color="rgba(80,30,160,0.55)"/>
+                        <stop offset="100%" stop-color="rgba(30,10,80,0.82)"/>
+                    </radialGradient>
+                    <radialGradient id="sh1" cx="30%" cy="25%" r="40%">
+                        <stop offset="0%" stop-color="rgba(255,255,255,0.7)"/>
+                        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                    </radialGradient>
+                </defs>
+                <circle cx="100" cy="100" r="96" fill="url(#bg1)" stroke="rgba(192,132,252,.3)" stroke-width="1.5"/>
+                <ellipse cx="68" cy="62" rx="28" ry="18" fill="url(#sh1)" opacity=".6"/>
+                <circle cx="100" cy="100" r="50" fill="none" stroke="rgba(253,230,138,.3)" stroke-width="1" stroke-dasharray="8 12">
+                    <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="8s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="100" cy="100" r="35" fill="none" stroke="rgba(232,121,249,.2)" stroke-width=".8" stroke-dasharray="5 10">
+                    <animateTransform attributeName="transform" type="rotate" from="360 100 100" to="0 100 100" dur="5s" repeatCount="indefinite"/>
+                </circle>
+                <!-- Paw inside ball -->
+                <g opacity=".25" fill="rgba(255,150,180,.6)">
+                    <ellipse cx="100" cy="118" rx="16" ry="11"/>
+                    <circle cx="87" cy="109" r="6.5"/>
+                    <circle cx="100" cy="106" r="6.5"/>
+                    <circle cx="113" cy="109" r="6.5"/>
+                </g>
+            </svg>
+        </div>
+        <div class="ball-hint" id="hint">请娇娇公主抽取今日运势</div>
+    </div>
+</div>
+
+<div class="loading" id="loading"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>
+<div class="card" id="card"></div>
+
+<script>
+    // Stars
+    const stars = document.getElementById('stars');
+    for (let i = 0; i < 70; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const sz = Math.random() * 3 + 1;
+        s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${Math.random()*3+2}s;--dl:${Math.random()*4}s;`;
+        stars.appendChild(s);
+    }
+
+    // 24 fortunes — clicking multiple times won't repeat in same session
+    const allFortunes = [
+        { rank:'badge-super', rText:'★ 超级大吉 ★', overall:'今日运势爆棚，紫气东来！', quote:'「今日的你，仿佛被幸运之神亲吻过，万事皆可期待。」', love:'缘分指数爆表', career:'事业蒸蒸日上', dir:'东北方', num:'7', col:'香槟金' },
+        { rank:'badge-good', rText:'◆ 大吉 ◆', overall:'整体运势极佳，顺风顺水！', quote:'「好事逢门，好运连连。今日的努力都将化作明日的惊喜。」', love:'感情甜蜜升温', career:'贵人相助', dir:'正东方', num:'3', col:'樱花粉' },
+        { rank:'badge-good', rText:'◆ 大吉 ◆', overall:'诸事顺遂，心想事成！', quote:'「星辰指引你的方向，宇宙都在为你让路。」', love:'有望遇到心仪之人', career:'灵感迸发', dir:'西北方', num:'9', col:'天空蓝' },
+        { rank:'badge-normal', rText:'◇ 吉 ◇', overall:'运势平稳，稳中求进！', quote:'「不必急于求成，稳步前行才是今日的主旋律。」', love:'保持现有状态', career:'稳扎稳打', dir:'正南方', num:'5', col:'薄荷绿' },
+        { rank:'badge-normal', rText:'◇ 吉 ◇', overall:'小有波折，终获圆满！', quote:'「生活偶尔给你出难题，但那是为了让结局更动人。」', love:'需要主动表达', career:'有些小挑战', dir:'正北方', num:'2', col:'蜜桃橙' },
+        { rank:'badge-super', rText:'★ 超级大吉 ★', overall:'今日紫微星高照，大吉无边！', quote:'「这一天属于你，连猫咪都为你的运气喵喵叫！」', love:'浪漫满格', career:'收获满满', dir:'东南方', num:'8', col:'玫瑰金' },
+        { rank:'badge-bad', rText:'△ 需注意 △', overall:'今日需谨慎，静心为上！', quote:'「风暴来临前，学会静待。明日的阳光更值得期待。」', love:'避免冲动决策', career:'防小人口舌', dir:'西南方', num:'1', col:'雾霾灰' },
+        { rank:'badge-normal', rText:'◇ 平平 ◇', overall:'今日平平淡淡是真！', quote:'「平凡的日子也有闪闪发光的小确幸。」', love:'享受独处时光', career:'按部就班', dir:'正北方', num:'4', col:'奶油白' },
+        { rank:'badge-good', rText:'◆ 大吉 ◆', overall:'今日福星高照，好事成双！', quote:'「宇宙为你开路，所有阻碍都将化为垫脚石。」', love:'遇见久违的悸动', career:'意外之喜降临', dir:'正东方', num:'6', col:'琥珀黄' },
+        { rank:'badge-super', rText:'★ 超级大吉 ★', overall:'今日万事皆宜，所向披靡！', quote:'「连猫咪都为你让路，星星都为你闪烁。」', love:'甜蜜值拉满', career:'财神敲门', dir:'北方', num:'3', col:'蜜糖粉' },
+        { rank:'badge-normal', rText:'◇ 平平 ◇', overall:'今日静水深流，韬光养晦！', quote:'「不急不躁，默默积累，好运在不远处等你。」', love:'暗恋者默默守护', career:'低调中进步', dir:'西南方', num:'7', col:'薰衣草紫' },
+        { rank:'badge-good', rText:'◆ 大吉 ◆', overall:'今日贵人环绕，事半功倍！', quote:'「你若盛开，清风自来。今日的你自带光芒。」', love:'关系突飞猛进', career:'如有神助', dir:'东南方', num:'9', col:'珊瑚橙' },
+        { rank:'badge-bad', rText:'△ 需注意 △', overall:'今日暗流涌动，戒急戒躁！', quote:'「退一步海阔天空，忍一时风平浪静。」', love:'避免与重要的人争执', career:'防止祸从口出', dir:'正北方', num:'1', col:'暗夜灰' },
+        { rank:'badge-super', rText:'★ 超级大吉 ★', overall:'今日天选之人，逢凶化吉！', quote:'「命运偏爱你，连水晶球都在为你发光。」', love:'心有灵犀一点通', career:'金光闪闪', dir:'正西方', num:'5', col:'极光银' },
+        { rank:'badge-good', rText:'◆ 大吉 ◆', overall:'今日心想事成，完美的一天！', quote:'「每一个愿望都被认真对待，每一步都刚刚好。」', love:'被宠溺的感觉', career:'超预期完成', dir:'西北方', num:'4', col:'星空蓝' },
+        { rank:'badge-normal', rText:'◇ 平平 ◇', overall:'今日波澜不惊，平安是福！', quote:'「没有大起大落，就是最好的日子。」', love:'细水长流的温情', career:'平安顺遂', dir:'正南方', num:'6', col:'奶茶色' },
+        { rank:'badge-good', rText:'◆ 大吉 ◆', overall:'今日贵人运爆棚，幸运buff叠满！', quote:'「出门遇贵人相助，回家有猫猫陪伴。」', love:'贵人也爱助攻', career:'轻松达成目标', dir:'正东方', num:'8', col:'抹茶绿' },
+        { rank:'badge-bad', rText:'△ 需注意 △', overall:'今日小人出没，小心避让！', quote:'「明枪易躲，暗箭难防，低调才是护身符。」', love:'感情上多留心眼', career:'防身边人使绊', dir:'东南方', num:'2', col:'石墨黑' },
+        { rank:'badge-super', rText:'★ 超级大吉 ★', overall:'今日是命运的宠儿，闪耀全场！', quote:'「你是今晚最亮的那颗星，连月亮都嫉妒你。」', love:'全场焦点就是你', career:'一路开挂', dir:'西北方', num:'7', col:'钻石白' },
+        { rank:'badge-normal', rText:'◇ 平平 ◇', overall:'今日稳中带喜，小确幸不断！', quote:'「不必追逐远方，美好就在身边的细节里。」', love:'日常的甜蜜最动人', career:'稳扎稳打进步', dir:'正北方', num:'3', col:'奶油黄' },
+        { rank:'badge-good', rText:'◆ 大吉 ◆', overall:'今日桃花运旺，人见人爱！', quote:'「走到哪里都是人群中的小太阳。」', love:'人见人夸', career:'魅力加成buff', dir:'正南方', num:'9', col:'桃花粉' },
+        { rank:'badge-super', rText:'★ 超级大吉 ★', overall:'今日破纪录，好运爆仓！', quote:'「今天许什么愿都能实现，快闭上眼睛想一想。」', love:'愿望成真', career:'业绩翻倍', dir:'东南方', num:'8', col:'金箔色' },
+        { rank:'badge-normal', rText:'◇ 吉 ◇', overall:'今日勤勉有得，静待花开！', quote:'「不要着急，最好的总在最后等你。」', love:'默默积蓄能量', career:'慢即是快', dir:'西南方', num:'5', col:'莫兰迪绿' },
+        { rank:'badge-good', rText:'◆ 大吉 ◆', overall:'今日万事胜意，幸福敲门！', quote:'「幸福会迟到但不会缺席，今日就是你的幸运日。」', love:'被世界温柔以待', career:'如有神助', dir:'正北方', num:'6', col:'樱花粉' },
+        { rank:'badge-bad', rText:'△ 需注意 △', overall:'今日静心沉淀，不宜冒进！', quote:'「今日适合修生养息，不宜做出重大决定。」', love:'感情上多沟通少猜疑', career:'不宜激进投资', dir:'正南方', num:'4', col:'烟灰蓝' },
+        { rank:'badge-super', rText:'★ 超级大吉 ★', overall:'今日神级运势，躺赢一整天！', quote:'「猫咪都为你让路，连水晶球都忍不住多亮几次。」', love:'甜到掉牙', career:'钱多到花不完', dir:'正东方', num:'9', col:'幻彩紫' },
+    ];
+
+    let pool = [];
+    let busy = false;
+
+    function getFortune() {
+        if (pool.length === 0) {
+            pool = [...allFortunes];
+            // Fisher-Yates shuffle
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+        }
+        return pool.pop();
+    }
+
+    function draw() {
+        if (busy) return;
+        busy = true;
+        const ball = document.getElementById('ball');
+        const hint = document.getElementById('hint');
+        const load = document.getElementById('loading');
+        const scene = document.getElementById('scene');
+        const hdr = document.getElementById('header');
+        hint.style.display = 'none';
+        ball.classList.add('shaking');
+        load.classList.add('show');
+        emitP(40);
+        setTimeout(() => {
+            ball.classList.remove('shaking');
+            ball.classList.add('glowing');
+            load.classList.remove('show');
+            scene.classList.add('dimmed');
+            hdr.classList.add('hidden');
+            const f = getFortune();
+            showC(f);
+            busy = false;
+        }, 2200);
+    }
+
+    function showC(f) {
+        const d = new Date();
+        const ds = `${d.getMonth()+1}月${d.getDate()}日 · ${['日','一','二','三','四','五','六'][d.getDay()]}`;
+        const card = document.getElementById('card');
+        card.innerHTML = `
+            <div class="c-orb"></div>
+            <div class="rank-badge ${f.rank}">${f.rText}</div>
+            <div class="date-str">${ds} · 今日运势</div>
+            <div class="overall">${f.overall}</div>
+            <div class="divider"></div>
+            <div class="items">
+                <div class="item"><div class="il">💕 爱情</div><div class="iv">${f.love}</div></div>
+                <div class="item"><div class="il">💼 事业</div><div class="iv">${f.career}</div></div>
+                <div class="item"><div class="il">🧭 方位</div><div class="iv">${f.dir}</div></div>
+                <div class="item"><div class="il">🔢 数字</div><div class="iv">${f.num}</div></div>
+                <div class="item" style="grid-column:span 2"><div class="il">🌈 幸运色</div><div class="iv">${f.col}</div></div>
+            </div>
+            <div class="quote">${f.quote}</div>
+            <button class="replay" onclick="reset()"><span>🔮</span> 再抽一次</button>
+            <div class="share-tip">长按运势卡 · 发送给亲爱的TA</div>
+        `;
+        card.classList.add('show');
+    }
+
+    function reset() {
+        const card = document.getElementById('card');
+        const ball = document.getElementById('ball');
+        const hint = document.getElementById('hint');
+        const scene = document.getElementById('scene');
+        const hdr = document.getElementById('header');
+        card.classList.remove('show');
+        ball.classList.remove('glowing');
+        hint.style.display = '';
+        scene.classList.remove('dimmed');
+        hdr.classList.remove('hidden');
+        card.innerHTML = '';
+    }
+
+    function emitP(n) {
+        const ct = document.getElementById('particles');
+        const cols = ['#e879f9','#c084fc','#f472b6','#fde68a','#818cf8','#fb7185'];
+        for (let i = 0; i < n; i++) {
+            setTimeout(() => {
+                const p = document.createElement('div');
+                p.className = 'p';
+                const sz = Math.random() * 7 + 3;
+                const c = cols[Math.floor(Math.random()*cols.length)];
+                p.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;bottom:35%;background:${c};box-shadow:0 0 ${sz*2}px ${c};--d:${Math.random()*3+3}s;`;
+                ct.appendChild(p);
+                requestAnimationFrame(() => p.classList.add('p'));
+                setTimeout(() => p.remove(), 6000);
+            }, i * 40);
+        }
+    }
+</script>
+</body>
+</html>
